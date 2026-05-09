@@ -1,15 +1,16 @@
 import {
   CalendarDays,
-  DollarSign,
   Flag,
   Medal,
   Pause,
   Play,
+  Plus,
   RefreshCw,
   RotateCcw,
   Trophy,
   TrendingDown,
   TrendingUp,
+  X,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -123,6 +124,10 @@ function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('rank');
   const [topFiveOnly, setTopFiveOnly] = useState(false);
+  const [selectedHorseIds, setSelectedHorseIds] = useState<string[]>(() =>
+    snapshots[Math.max(0, snapshots.length - 1)]?.standings.slice(0, 5).map((standing) => standing.id) ?? [],
+  );
+  const [horseToAdd, setHorseToAdd] = useState('');
 
   useEffect(() => {
     if (!isPlaying || snapshots.length <= 1) {
@@ -141,6 +146,7 @@ function App() {
   const leader = standings[0];
   const second = standings[1];
   const lastPlace = standings[standings.length - 1];
+  const topFiveIds = useMemo(() => standings.slice(0, 5).map((standing) => standing.id), [standings]);
 
   const sortedStandings = useMemo(() => {
     const sorted = [...standings].sort((a, b) => {
@@ -156,13 +162,24 @@ function App() {
   }, [sortKey, standings, topFiveOnly]);
 
   const raceRows = useMemo(() => [...standings].sort((a, b) => a.rank - b.rank), [standings]);
+  const visibleRaceRows = useMemo(() => {
+    const selected = selectedHorseIds
+      .map((id) => raceRows.find((standing) => standing.id === id))
+      .filter((standing): standing is Standing => Boolean(standing));
+
+    return selected.length > 0 ? selected : raceRows.slice(0, 5);
+  }, [raceRows, selectedHorseIds]);
+  const availableHorses = useMemo(
+    () => raceRows.filter((standing) => !visibleRaceRows.some((visible) => visible.id === standing.id)),
+    [raceRows, visibleRaceRows],
+  );
   const chartIds = useMemo(() => {
-    const ids = raceRows.slice(0, 5).map((standing) => standing.id);
+    const ids = visibleRaceRows.map((standing) => standing.id);
     if (lastPlace && !ids.includes(lastPlace.id)) {
       ids.push(lastPlace.id);
     }
     return ids;
-  }, [lastPlace, raceRows]);
+  }, [lastPlace, visibleRaceRows]);
 
   const chartData = useMemo(
     () =>
@@ -187,12 +204,16 @@ function App() {
     [chartIds, raceRows],
   );
 
-  const raceScale = useMemo(() => {
-    const returns = standings.map((standing) => standing.returnPct);
-    const min = Math.min(...returns, 0);
-    const max = Math.max(...returns, 0);
-    return { min, max, range: Math.max(1, max - min) };
-  }, [standings]);
+  const raceMaxReturn = useMemo(
+    () => Math.max(1, ...standings.map((standing) => Math.max(0, standing.returnPct))),
+    [standings],
+  );
+
+  useEffect(() => {
+    if (selectedHorseIds.length === 0 && topFiveIds.length > 0) {
+      setSelectedHorseIds(topFiveIds);
+    }
+  }, [selectedHorseIds.length, topFiveIds]);
 
   if (!selectedSnapshot) {
     return <EmptyState warnings={data.warnings} />;
@@ -233,6 +254,8 @@ function App() {
 
       <section className="stat-grid" aria-label="Competition highlights">
         <StatCard
+          accentLabel="Projected Payout"
+          accentValue={money.format(selectedSnapshot.pot.winnerPayout)}
           icon={<Trophy size={20} />}
           label="Leader"
           value={leader ? `${leader.draftOrder}. ${leader.name}` : 'No leader'}
@@ -240,6 +263,8 @@ function App() {
           tone="gold"
         />
         <StatCard
+          accentLabel="Projected Payout"
+          accentValue={money.format(selectedSnapshot.pot.secondPayout)}
           icon={<Medal size={20} />}
           label="Second Place"
           value={second ? `${second.draftOrder}. ${second.name}` : 'No second'}
@@ -247,17 +272,10 @@ function App() {
           tone="green"
         />
         <StatCard
-          icon={<DollarSign size={20} />}
-          label="Winner Payout"
-          value={money.format(selectedSnapshot.pot.winnerPayout)}
-          detail={`2nd gets ${money.format(selectedSnapshot.pot.secondPayout)}`}
-          tone="ink"
-        />
-        <StatCard
           icon={<TrendingDown size={20} />}
-          label="Last Place"
+          label="Loser"
           value={lastPlace ? `${lastPlace.draftOrder}. ${lastPlace.name}` : 'No last place'}
-          detail={lastPlace ? `${lastPlace.ticker} top-up ${money.format(lastPlace.topUpOwed)}` : ''}
+          detail={lastPlace ? `${lastPlace.ticker} ${percent.format(lastPlace.returnPct)}% - top-up ${money.format(lastPlace.topUpOwed)}` : ''}
           tone="red"
         />
       </section>
@@ -309,39 +327,103 @@ function App() {
           <span>{shortDate(snapshots[snapshots.length - 1]?.date ?? selectedSnapshot.date)}</span>
         </div>
 
-        <div className="race-track">
-          <div className="finish-line" aria-hidden="true" />
-          {raceRows.map((standing) => {
-            const left = 7 + ((standing.returnPct - raceScale.min) / raceScale.range) * 84;
-            return (
-              <div
-                className={[
-                  'race-lane',
-                  standing.isTopFive ? 'race-lane--top' : '',
-                  standing.isLast ? 'race-lane--last' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                key={standing.id}
+        <div className="race-layout">
+          <div
+            className="oval-track"
+            aria-label={`Oval race simulation with ${visibleRaceRows.length} horses`}
+            role="img"
+          >
+            <div className="oval-track__outer" aria-hidden="true" />
+            <div className="oval-track__inner" aria-hidden="true" />
+            <div className="oval-track__infield">
+              <span>Projected Pot</span>
+              <strong>{money.format(selectedSnapshot.pot.total)}</strong>
+            </div>
+            <div className="finish-post" aria-hidden="true">
+              FINISH
+            </div>
+            {visibleRaceRows.map((standing, index) => {
+              const rawProgress = Math.max(0, standing.returnPct) / raceMaxReturn;
+              const point = getOvalPoint(Math.min(0.96, 0.04 + rawProgress * 0.9), index);
+              return (
+                <div
+                  className={[
+                    'oval-horse',
+                    standing.isTopFive ? 'oval-horse--top' : '',
+                    standing.isLast ? 'oval-horse--last' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  key={standing.id}
+                  style={{ left: `${point.x}%`, top: `${point.y}%` }}
+                >
+                  <HorseIcon />
+                  <span>{standing.draftOrder}</span>
+                  <strong>{standing.ticker}</strong>
+                </div>
+              );
+            })}
+          </div>
+
+          <aside className="race-roster" aria-label="Simulation field">
+            <div>
+              <p className="eyebrow">Simulation Field</p>
+              <h3>Top 5 Default</h3>
+            </div>
+            <div className="field-actions">
+              <select
+                aria-label="Add horse to simulation"
+                value={horseToAdd}
+                onChange={(event) => setHorseToAdd(event.target.value)}
               >
-                <div className="lane-label">
-                  <strong>#{standing.draftOrder}</strong>
-                  <span>{standing.ticker}</span>
-                </div>
-                <div className="lane-surface">
-                  <div className="lane-zero" aria-hidden="true" />
-                  <div className="horse-marker" style={{ left: `${left}%` }}>
-                    <HorseIcon />
-                    <span>{standing.draftOrder}</span>
-                  </div>
-                </div>
-                <div className="lane-result">
-                  <strong>{ordinal(standing.rank)}</strong>
-                  <span>{percent.format(standing.returnPct)}%</span>
-                </div>
-              </div>
-            );
-          })}
+                <option value="">Add</option>
+                {availableHorses.map((standing) => (
+                  <option key={standing.id} value={standing.id}>
+                    #{standing.draftOrder} {standing.name} ({standing.ticker})
+                  </option>
+                ))}
+              </select>
+              <button
+                className="icon-button"
+                disabled={!horseToAdd}
+                type="button"
+                title="Add horse"
+                aria-label="Add selected horse"
+                onClick={() => {
+                  if (!horseToAdd) return;
+                  setSelectedHorseIds((ids) => [...ids, horseToAdd]);
+                  setHorseToAdd('');
+                }}
+              >
+                <Plus size={18} />
+              </button>
+              <button
+                className="text-button"
+                type="button"
+                onClick={() => {
+                  setSelectedHorseIds(topFiveIds);
+                  setHorseToAdd('');
+                }}
+              >
+                Top 5
+              </button>
+            </div>
+            <div className="horse-chip-list">
+              {visibleRaceRows.map((standing) => (
+                <span className="horse-chip" key={standing.id}>
+                  #{standing.draftOrder} {standing.ticker}
+                  <button
+                    type="button"
+                    title={`Remove ${standing.ticker}`}
+                    aria-label={`Remove ${standing.ticker} from simulation`}
+                    onClick={() => setSelectedHorseIds((ids) => ids.filter((id) => id !== standing.id))}
+                  >
+                    <X size={13} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </aside>
         </div>
       </section>
 
@@ -349,7 +431,7 @@ function App() {
         <div className="chart-panel">
           <div className="section-header section-header--compact">
             <div>
-              <p className="eyebrow">Top 5 + Trailer</p>
+              <p className="eyebrow">Selected Field + Trailer</p>
               <h2>Return Trend</h2>
             </div>
             <TrendingUp size={22} aria-hidden="true" />
@@ -528,12 +610,16 @@ function EmptyState({ warnings }: { warnings: Warning[] }) {
 }
 
 function StatCard({
+  accentLabel,
+  accentValue,
   detail,
   icon,
   label,
   tone,
   value,
 }: {
+  accentLabel?: string;
+  accentValue?: string;
   detail: string;
   icon: React.ReactNode;
   label: string;
@@ -541,13 +627,21 @@ function StatCard({
   value: string;
 }) {
   return (
-    <article className={`stat-card stat-card--${tone}`}>
-      <div className="stat-card__icon" aria-hidden="true">
-        {icon}
+    <article className={`stat-card stat-card--${tone} ${accentValue ? 'stat-card--split' : ''}`}>
+      <div className="stat-card__main">
+        <div className="stat-card__icon" aria-hidden="true">
+          {icon}
+        </div>
+        <span>{label}</span>
+        <strong>{value}</strong>
+        <small>{detail}</small>
       </div>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <small>{detail}</small>
+      {accentValue && (
+        <div className="stat-card__accent">
+          <span>{accentLabel}</span>
+          <strong>{accentValue}</strong>
+        </div>
+      )}
     </article>
   );
 }
@@ -587,6 +681,17 @@ function shortDate(value: string) {
     day: 'numeric',
     timeZone: 'UTC',
   }).format(new Date(`${value}T00:00:00Z`));
+}
+
+function getOvalPoint(progress: number, index: number) {
+  const lane = index % 6;
+  const radiusX = 42 - lane * 1.85;
+  const radiusY = 35 - lane * 1.25;
+  const angle = progress * Math.PI * 2;
+  return {
+    x: 50 + Math.cos(angle) * radiusX,
+    y: 50 + Math.sin(angle) * radiusY,
+  };
 }
 
 function ordinal(value: number) {
