@@ -147,6 +147,9 @@ function App() {
   const second = standings[1];
   const lastPlace = standings[standings.length - 1];
   const topFiveIds = useMemo(() => standings.slice(0, 5).map((standing) => standing.id), [standings]);
+  const raceSplitCount = Math.max(1, snapshots.length - 1);
+  const activeSplit = Math.min(snapshotIndex, raceSplitCount);
+  const activeSplitProgress = activeSplit / raceSplitCount;
 
   const sortedStandings = useMemo(() => {
     const sorted = [...standings].sort((a, b) => {
@@ -204,9 +207,17 @@ function App() {
     [chartIds, raceRows],
   );
 
-  const raceMaxReturn = useMemo(
-    () => Math.max(1, ...standings.map((standing) => Math.max(0, standing.returnPct))),
-    [standings],
+  const raceReturnRange = Math.max(0, (leader?.returnPct ?? 0) - (lastPlace?.returnPct ?? 0));
+  const splitMarkers = useMemo(
+    () =>
+      Array.from({ length: raceSplitCount }, (_, index) => {
+        const split = index + 1;
+        return {
+          split,
+          point: getOvalPoint(split / raceSplitCount, 6),
+        };
+      }),
+    [raceSplitCount],
   );
 
   useEffect(() => {
@@ -214,6 +225,11 @@ function App() {
       setSelectedHorseIds(topFiveIds);
     }
   }, [selectedHorseIds.length, topFiveIds]);
+
+  const goToSnapshot = (value: number) => {
+    setIsPlaying(false);
+    setSnapshotIndex(value);
+  };
 
   if (!selectedSnapshot) {
     return <EmptyState warnings={data.warnings} />;
@@ -272,10 +288,12 @@ function App() {
           tone="green"
         />
         <StatCard
+          accentLabel="Projected Pay In"
+          accentValue={lastPlace ? money.format(lastPlace.topUpOwed) : money.format(0)}
           icon={<TrendingDown size={20} />}
           label="Loser"
           value={lastPlace ? `${lastPlace.draftOrder}. ${lastPlace.name}` : 'No last place'}
-          detail={lastPlace ? `${lastPlace.ticker} ${percent.format(lastPlace.returnPct)}% - top-up ${money.format(lastPlace.topUpOwed)}` : ''}
+          detail={lastPlace ? `${lastPlace.ticker} ${percent.format(lastPlace.returnPct)}%` : ''}
           tone="red"
         />
       </section>
@@ -320,8 +338,10 @@ function App() {
             type="range"
             value={snapshotIndex}
             onChange={(event) => {
-              setIsPlaying(false);
-              setSnapshotIndex(Number(event.target.value));
+              goToSnapshot(Number(event.currentTarget.value));
+            }}
+            onInput={(event) => {
+              goToSnapshot(Number(event.currentTarget.value));
             }}
           />
           <span>{shortDate(snapshots[snapshots.length - 1]?.date ?? selectedSnapshot.date)}</span>
@@ -330,21 +350,35 @@ function App() {
         <div className="race-layout">
           <div
             className="oval-track"
-            aria-label={`Oval race simulation with ${visibleRaceRows.length} horses`}
+            aria-label={`Oval race simulation with ${visibleRaceRows.length} horses at split ${activeSplit} of ${raceSplitCount}`}
             role="img"
           >
             <div className="oval-track__outer" aria-hidden="true" />
             <div className="oval-track__inner" aria-hidden="true" />
             <div className="oval-track__infield">
-              <span>Projected Pot</span>
-              <strong>{money.format(selectedSnapshot.pot.total)}</strong>
+              <span>Race Split</span>
+              <strong>{activeSplit} / {raceSplitCount}</strong>
+              <small>{formatDate(selectedSnapshot.date)}</small>
             </div>
             <div className="finish-post" aria-hidden="true">
-              FINISH
+              START / FINISH
             </div>
+            {splitMarkers.map(({ point, split }) => (
+              <span
+                aria-hidden="true"
+                className={`split-marker ${split === activeSplit ? 'split-marker--active' : ''}`}
+                key={split}
+                style={{ left: `${point.x}%`, top: `${point.y}%` }}
+              >
+                {split}
+              </span>
+            ))}
             {visibleRaceRows.map((standing, index) => {
-              const rawProgress = Math.max(0, standing.returnPct) / raceMaxReturn;
-              const point = getOvalPoint(Math.min(0.96, 0.04 + rawProgress * 0.9), index);
+              const performanceShare =
+                raceReturnRange > 0
+                  ? Math.max(0, Math.min(1, (standing.returnPct - (lastPlace?.returnPct ?? 0)) / raceReturnRange))
+                  : 0;
+              const point = getOvalPoint(performanceShare * activeSplitProgress, index);
               return (
                 <div
                   className={[
@@ -517,7 +551,7 @@ function App() {
                 <option value="draft">Draft order</option>
                 <option value="return">Return</option>
                 <option value="value">Value</option>
-                <option value="topUp">Top-up owed</option>
+                <option value="topUp">Pay in</option>
                 <option value="ticker">Ticker</option>
               </select>
             </label>
@@ -543,7 +577,7 @@ function App() {
                 <th>Shares</th>
                 <th>Return</th>
                 <th>Value</th>
-                <th>Top-Up</th>
+                <th>Pay In</th>
                 <th>Payout</th>
               </tr>
             </thead>
@@ -687,7 +721,7 @@ function getOvalPoint(progress: number, index: number) {
   const lane = index % 6;
   const radiusX = 42 - lane * 1.85;
   const radiusY = 35 - lane * 1.25;
-  const angle = progress * Math.PI * 2;
+  const angle = -Math.PI / 2 + progress * Math.PI * 2;
   return {
     x: 50 + Math.cos(angle) * radiusX,
     y: 50 + Math.sin(angle) * radiusY,

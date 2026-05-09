@@ -360,15 +360,23 @@ input[type="range"] {
   font-size: 1.25rem;
 }
 
+.oval-track__infield small {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
 .finish-post {
   position: absolute;
-  right: 5.8%;
-  bottom: 50%;
+  top: 7%;
+  left: 50%;
   z-index: 3;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 86px;
+  width: 48px;
+  height: 22%;
+  min-height: 52px;
+  max-height: 74px;
   color: #111411;
   background:
     linear-gradient(45deg, #111 25%, transparent 25%) 0 0 / 8px 8px,
@@ -380,8 +388,35 @@ input[type="range"] {
   font-size: 0.62rem;
   font-weight: 900;
   letter-spacing: 0;
-  transform: translate(50%, 50%);
+  line-height: 1.05;
+  text-align: center;
+  transform: translate(-50%, -8%);
   writing-mode: vertical-rl;
+}
+
+.split-marker {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  color: #4e5948;
+  background: rgb(255 255 255 / 0.76);
+  border: 1px solid rgb(21 24 22 / 0.2);
+  border-radius: 50%;
+  font-size: 0.56rem;
+  font-weight: 900;
+  transform: translate(-50%, -50%);
+}
+
+.split-marker--active {
+  width: 24px;
+  height: 24px;
+  color: #fff;
+  background: var(--ink);
+  border-color: #fff;
+  box-shadow: 0 8px 14px rgb(21 24 22 / 0.22);
 }
 
 .oval-horse {
@@ -779,7 +814,8 @@ tbody tr {
 
   .finish-post {
     width: 32px;
-    height: 68px;
+    min-height: 48px;
+    font-size: 0.55rem;
   }
 
   .oval-horse {
