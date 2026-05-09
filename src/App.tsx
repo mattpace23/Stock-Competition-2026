@@ -1,5 +1,6 @@
 import {
   CalendarDays,
+  ExternalLink,
   Flag,
   Medal,
   Pause,
@@ -23,6 +24,7 @@ import {
   YAxis,
 } from 'recharts';
 import competitionData from './data/competition.json';
+import moverNotesData from './data/mover-notes.json';
 
 type Entry = {
   id: string;
@@ -99,6 +101,19 @@ type CompetitionData = {
 type SortKey = 'rank' | 'draft' | 'return' | 'value' | 'topUp' | 'ticker';
 
 const data = competitionData as CompetitionData;
+const moverNotes = moverNotesData as Record<string, Record<string, MoverNote>>;
+
+type MoverNote = {
+  headline: string;
+  summary: string;
+  sourceLabel: string;
+  sourceUrl: string;
+};
+
+type Mover = Standing & {
+  delta: number;
+  note?: MoverNote;
+};
 
 const money = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -219,6 +234,25 @@ function App() {
       }),
     [raceSplitCount],
   );
+  const weeklyMovers = useMemo(() => {
+    if (snapshotIndex === 0 || !selectedSnapshot) {
+      return { up: null, down: null };
+    }
+
+    const previousSnapshot = snapshots[snapshotIndex - 1];
+    const previousReturns = new Map(previousSnapshot.standings.map((standing) => [standing.id, standing.returnPct]));
+    const notesForDate = moverNotes[selectedSnapshot.date] ?? {};
+    const movers = standings.map((standing) => ({
+      ...standing,
+      delta: standing.returnPct - (previousReturns.get(standing.id) ?? 0),
+      note: notesForDate[standing.ticker],
+    }));
+
+    return {
+      up: movers.reduce<Mover | null>((best, standing) => (best && best.delta >= standing.delta ? best : standing), null),
+      down: movers.reduce<Mover | null>((worst, standing) => (worst && worst.delta <= standing.delta ? worst : standing), null),
+    };
+  }, [selectedSnapshot, snapshotIndex, snapshots, standings]);
 
   useEffect(() => {
     if (selectedHorseIds.length === 0 && topFiveIds.length > 0) {
@@ -294,6 +328,23 @@ function App() {
           label="Loser"
           value={lastPlace ? `${lastPlace.draftOrder}. ${lastPlace.name}` : 'No last place'}
           detail={lastPlace ? `${lastPlace.ticker} ${percent.format(lastPlace.returnPct)}%` : ''}
+          tone="red"
+        />
+      </section>
+
+      <section className="mover-grid" aria-label="Weekly movers">
+        <MoverCard
+          detail="Biggest percentage-point gain from the prior Friday"
+          icon={<TrendingUp size={20} />}
+          mover={weeklyMovers.up}
+          title="Biggest Breakaway"
+          tone="green"
+        />
+        <MoverCard
+          detail="Biggest percentage-point drop from the prior Friday"
+          icon={<TrendingDown size={20} />}
+          mover={weeklyMovers.down}
+          title="Hardest Fade"
           tone="red"
         />
       </section>
@@ -680,6 +731,62 @@ function StatCard({
   );
 }
 
+function MoverCard({
+  detail,
+  icon,
+  mover,
+  title,
+  tone,
+}: {
+  detail: string;
+  icon: React.ReactNode;
+  mover: Mover | null;
+  title: string;
+  tone: 'green' | 'red';
+}) {
+  const sourceLabel = mover?.note?.sourceLabel ?? `Research ${mover?.ticker ?? 'this ticker'} news`;
+  const sourceUrl =
+    mover?.note?.sourceUrl ??
+    `https://finance.yahoo.com/quote/${encodeURIComponent(mover?.ticker ?? '')}/news/`;
+
+  return (
+    <article className={`mover-card mover-card--${tone}`}>
+      <div className="mover-card__topline">
+        <div className="stat-card__icon" aria-hidden="true">
+          {icon}
+        </div>
+        <div>
+          <span>{title}</span>
+          <small>{detail}</small>
+        </div>
+      </div>
+      {mover ? (
+        <>
+          <div className="mover-card__score">
+            <div>
+              <strong>
+                {mover.draftOrder}. {mover.name}
+              </strong>
+              <small>{mover.ticker}</small>
+            </div>
+            <b>{formatPointMove(mover.delta)}</b>
+          </div>
+          <p>
+            <strong>{mover.note?.headline ?? 'Research note pending'}.</strong>{' '}
+            {mover.note?.summary ?? 'This split has a calculated mover, but a sourced market note has not been added yet.'}
+          </p>
+          <a href={sourceUrl} rel="noreferrer" target="_blank">
+            {sourceLabel}
+            <ExternalLink size={14} aria-hidden="true" />
+          </a>
+        </>
+      ) : (
+        <p>No prior Friday split yet. The first mover board appears once the race leaves the gate.</p>
+      )}
+    </article>
+  );
+}
+
 function HorseIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 64 36" focusable="false">
@@ -721,11 +828,15 @@ function getOvalPoint(progress: number, index: number) {
   const lane = index % 6;
   const radiusX = 42 - lane * 1.85;
   const radiusY = 35 - lane * 1.25;
-  const angle = -Math.PI / 2 + progress * Math.PI * 2;
+  const angle = -Math.PI / 2 - progress * Math.PI * 2;
   return {
     x: 50 + Math.cos(angle) * radiusX,
     y: 50 + Math.sin(angle) * radiusY,
   };
+}
+
+function formatPointMove(value: number) {
+  return `${percent.format(value)} pts`;
 }
 
 function ordinal(value: number) {

@@ -132,7 +132,8 @@ h2 {
 }
 
 .scoreboard__payout .label,
-.stat-card span {
+.stat-card span,
+.mover-card span {
   color: var(--muted);
   font-size: 0.76rem;
   font-weight: 800;
@@ -146,7 +147,8 @@ h2 {
 }
 
 .scoreboard__payout small,
-.stat-card small {
+.stat-card small,
+.mover-card small {
   color: var(--muted);
 }
 
@@ -165,6 +167,7 @@ h2 {
 }
 
 .stat-card,
+.mover-card,
 .race-section,
 .chart-panel,
 .data-panel,
@@ -231,6 +234,86 @@ h2 {
 }
 
 .stat-card--red .stat-card__icon {
+  background: var(--red);
+}
+
+.mover-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.mover-card {
+  display: grid;
+  gap: 14px;
+  min-height: 188px;
+  padding: 18px;
+}
+
+.mover-card__topline,
+.mover-card__score {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.mover-card__topline {
+  justify-content: flex-start;
+}
+
+.mover-card__topline > div:last-child,
+.mover-card__score > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.mover-card__score strong {
+  color: var(--ink);
+  font-size: 1.16rem;
+  line-height: 1.12;
+}
+
+.mover-card__score b {
+  flex: 0 0 auto;
+  color: var(--ink);
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+.mover-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.mover-card p strong {
+  color: var(--ink);
+}
+
+.mover-card a {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  justify-self: start;
+  color: #173c35;
+  font-size: 0.84rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.mover-card a:hover {
+  text-decoration: underline;
+}
+
+.mover-card--green .stat-card__icon {
+  background: var(--green);
+}
+
+.mover-card--red .stat-card__icon {
   background: var(--red);
 }
 
@@ -756,6 +839,10 @@ tbody tr {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .mover-grid {
+    grid-template-columns: 1fr;
+  }
+
   .race-layout {
     grid-template-columns: 1fr;
   }
@@ -781,6 +868,11 @@ tbody tr {
 
   .stat-grid {
     grid-template-columns: 1fr;
+  }
+
+  .mover-card__score {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .section-header,
@@ -882,6 +974,7 @@ tbody tr {
   }
 
   .stat-grid,
+  .mover-grid,
   .analytics-grid {
     gap: 10px;
     margin-top: 10px;
@@ -894,6 +987,24 @@ tbody tr {
   .stat-card {
     min-height: 104px;
     padding: 12px;
+  }
+
+  .mover-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mover-card {
+    gap: 10px;
+    min-height: 150px;
+    padding: 12px;
+  }
+
+  .mover-card__score strong {
+    font-size: 1rem;
+  }
+
+  .mover-card__score b {
+    font-size: 1.25rem;
   }
 
   .stat-card__icon {
@@ -922,11 +1033,42 @@ tbody tr {
   }
 
   .oval-track {
-    height: 230px;
+    height: 205px;
   }
 
   .race-roster {
     gap: 8px;
     padding: 10px;
+  }
+
+  .finish-post {
+    width: 38px;
+    min-height: 46px;
+    font-size: 0.52rem;
+  }
+
+  .split-marker {
+    width: 16px;
+    height: 16px;
+    font-size: 0.52rem;
+  }
+
+  .split-marker--active {
+    width: 21px;
+    height: 21px;
+  }
+
+  .oval-horse {
+    width: 50px;
+    height: 42px;
+  }
+
+  .oval-horse svg {
+    width: 50px;
+    height: 30px;
+  }
+
+  .oval-horse strong {
+    top: 31px;
   }
 }
