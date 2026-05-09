@@ -1,0 +1,6 @@
+{
+  "finalSaleDate": "2026-12-21",
+  "finalSalePrices": {},
+  "corporateActions": {},
+  "notes": "Add final sale prices after Dec. 21. Use draft order as the key, e.g. \"14\": { \"salePrice\": 250.12 } or \"14\": { \"saleValue\": 155.10 }."
+}
