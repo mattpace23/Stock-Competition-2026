@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-08T21:48:03.053Z",
+  "generatedAt": "2026-05-11T17:14:12.798Z",
   "buyDate": "2026-02-06",
   "sellDate": "2026-12-21",
   "latestSnapshotDate": "2026-05-08",
@@ -9436,9 +9436,9 @@
       "isFinal": false,
       "hasManualSalePrices": false,
       "pot": {
-        "total": 3917.62,
-        "winnerPayout": 3134.1,
-        "secondPayout": 783.52
+        "total": 3918.8,
+        "winnerPayout": 3135.04,
+        "secondPayout": 783.76
       },
       "standings": [
         {
@@ -9460,7 +9460,7 @@
           "isSecond": false,
           "isLast": false,
           "payoutShare": 0.8,
-          "projectedPayout": 3134.1
+          "projectedPayout": 3135.04
         },
         {
           "id": "13",
@@ -9481,7 +9481,7 @@
           "isSecond": true,
           "isLast": false,
           "payoutShare": 0.2,
-          "projectedPayout": 783.52
+          "projectedPayout": 783.76
         },
         {
           "id": "3",
@@ -9680,8 +9680,8 @@
           "sourceSymbol": "HYPE32196-USD",
           "shares": 2.91,
           "impliedBuyPrice": 34.36426116838488,
-          "value": 125.97,
-          "returnPct": 25.97,
+          "value": 125.71,
+          "returnPct": 25.71,
           "topUpOwed": 0,
           "sourceDate": "2026-05-08",
           "snapshotDate": "2026-05-08",
@@ -9785,8 +9785,8 @@
           "sourceSymbol": "ET",
           "shares": 5.5772,
           "impliedBuyPrice": 17.93014415835903,
-          "value": 107.86,
-          "returnPct": 7.86,
+          "value": 109.72,
+          "returnPct": 9.72,
           "topUpOwed": 0,
           "sourceDate": "2026-05-08",
           "snapshotDate": "2026-05-08",
@@ -9806,8 +9806,8 @@
           "sourceSymbol": "SOL-USD",
           "shares": 1.15,
           "impliedBuyPrice": 86.95652173913044,
-          "value": 106.16,
-          "returnPct": 6.16,
+          "value": 105.74,
+          "returnPct": 5.74,
           "topUpOwed": 0,
           "sourceDate": "2026-05-08",
           "snapshotDate": "2026-05-08",
@@ -10079,9 +10079,9 @@
           "sourceSymbol": "OPTT",
           "shares": 218,
           "impliedBuyPrice": 0.45871559633027525,
-          "value": 76.19,
-          "returnPct": -23.81,
-          "topUpOwed": 23.81,
+          "value": 76.3,
+          "returnPct": -23.7,
+          "topUpOwed": 23.7,
           "sourceDate": "2026-05-08",
           "snapshotDate": "2026-05-08",
           "rank": 31,
