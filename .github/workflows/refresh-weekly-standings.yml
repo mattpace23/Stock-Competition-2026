@@ -1,0 +1,58 @@
+name: Refresh weekly standings
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Friday 3:45 PM Central during daylight saving time.
+    # This is 45 minutes after the regular U.S. market close.
+    - cron: "45 20 * 3-10 5"
+    # Friday 3:45 PM Central during standard time.
+    - cron: "45 21 * 1,2,11,12 5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-weekly-standings
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Refresh data and deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --progress=false
+
+      - name: Refresh market data
+        run: npm run refresh:data
+
+      - name: Run tests
+        run: npm test
+
+      - name: Verify production build
+        run: npm run build
+
+      - name: Commit refreshed standings
+        run: |
+          if git diff --quiet -- src/data/competition.json; then
+            echo "No standings changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/data/competition.json
+          git commit -m "Refresh weekly competition data"
+          git push
