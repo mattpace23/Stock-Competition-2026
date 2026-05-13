@@ -434,13 +434,18 @@ function App() {
                 <div
                   className={[
                     'oval-horse',
-                    standing.isTopFive ? 'oval-horse--top' : '',
-                    standing.isLast ? 'oval-horse--last' : '',
+                    getHorseToneClass(standing),
                   ]
                     .filter(Boolean)
                     .join(' ')}
                   key={standing.id}
-                  style={{ left: `${point.x}%`, top: `${point.y}%` }}
+                  style={
+                    {
+                      left: `${point.x}%`,
+                      top: `${point.y}%`,
+                      '--horse-rotation': `${point.rotation}deg`,
+                    } as React.CSSProperties
+                  }
                 >
                   <HorseIcon />
                   <span>{standing.draftOrder}</span>
@@ -789,10 +794,15 @@ function MoverCard({
 
 function HorseIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 64 36" focusable="false">
-      <path d="M13 23c4-7 12-11 22-10l8 1 5-7 8 4-3 6 5 5-5 5-9-1-7 6-5-3-8 2-4-4-8 4-3-3Z" />
-      <path d="M21 27l-3 8M31 28l1 7M43 25l4 9" />
-      <circle cx="53" cy="13" r="1.7" />
+    <svg aria-hidden="true" viewBox="0 0 82 50" focusable="false">
+      <path className="horse-tail" d="M17 25c-6-7-11-7-14-4 4 1 8 4 10 9" />
+      <path className="horse-body" d="M16 28c4-10 12-15 25-14l14 2c5 1 8 5 8 10 0 7-7 11-21 11H25c-7 0-10-3-9-9Z" />
+      <path className="horse-neck" d="M53 18c4-8 9-12 15-12 4 0 7 3 7 7l-5 3 4 6-5 5-8-2-6 5" />
+      <path className="horse-mane" d="M56 17c5 2 8 4 10 7M59 13c4 1 7 3 10 6" />
+      <path className="horse-saddle" d="M31 14h17l3 9H28Z" />
+      <path className="horse-leg" d="M26 35l-5 11M35 35l2 11M49 35l-4 11M58 32l8 10" />
+      <path className="horse-hoof" d="M18 46h7M35 46h7M42 46h7M64 42h7" />
+      <circle className="horse-eye" cx="69" cy="12" r="1.6" />
     </svg>
   );
 }
@@ -832,11 +842,19 @@ function getOvalPoint(progress: number, index: number) {
   return {
     x: 50 + Math.cos(angle) * radiusX,
     y: 50 + Math.sin(angle) * radiusY,
+    rotation: Math.atan2(-radiusY * Math.cos(angle), radiusX * Math.sin(angle)) * (180 / Math.PI),
   };
 }
 
 function formatPointMove(value: number) {
   return `${percent.format(value)} pts`;
+}
+
+function getHorseToneClass(standing: Standing) {
+  if (standing.rank === 1) return 'oval-horse--leader';
+  if (standing.rank === 2) return 'oval-horse--second';
+  if (standing.rank === 3) return 'oval-horse--third';
+  return standing.returnPct >= 0 ? 'oval-horse--positive' : 'oval-horse--negative';
 }
 
 function ordinal(value: number) {

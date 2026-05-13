@@ -386,11 +386,22 @@ input[type="range"] {
   height: clamp(240px, 26vw, 320px);
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 50%, rgb(255 255 255 / 0.72) 0 27%, transparent 28%),
-    repeating-linear-gradient(0deg, transparent 0 18px, rgb(21 24 22 / 0.035) 18px 19px),
-    #e9eee4;
-  border: 1px solid #cdd6c8;
+    linear-gradient(180deg, rgb(255 255 255 / 0.44), transparent 44%),
+    repeating-linear-gradient(90deg, transparent 0 22px, rgb(42 83 46 / 0.045) 22px 23px),
+    #dcebd5;
+  border: 1px solid #b9c9b3;
   border-radius: 8px;
+}
+
+.oval-track::before {
+  position: absolute;
+  inset: 5.6% 3.7%;
+  z-index: 2;
+  border: 2px solid rgb(255 255 255 / 0.86);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgb(85 58 37 / 0.26);
+  content: "";
+  pointer-events: none;
 }
 
 .oval-track__outer,
@@ -402,17 +413,26 @@ input[type="range"] {
 
 .oval-track__outer {
   inset: 8% 5%;
-  background: #73825c;
-  border: 2px solid #465239;
-  box-shadow: inset 0 0 0 12px rgb(255 255 255 / 0.15);
+  background:
+    radial-gradient(ellipse at 50% 47%, rgb(255 255 255 / 0.18), transparent 58%),
+    repeating-linear-gradient(12deg, rgb(255 255 255 / 0.08) 0 2px, transparent 2px 12px),
+    linear-gradient(180deg, #c1844d, #9c6039);
+  border: 2px solid #6f472c;
+  box-shadow:
+    inset 0 0 0 7px rgb(255 255 255 / 0.54),
+    inset 0 0 0 18px rgb(102 65 39 / 0.2),
+    inset 0 0 0 27px rgb(255 255 255 / 0.28),
+    0 10px 20px rgb(21 24 22 / 0.12);
 }
 
 .oval-track__inner {
   inset: 29% 25%;
   z-index: 1;
-  background: var(--field);
-  border: 2px solid #cbd4c4;
-  box-shadow: 0 0 0 2px rgb(255 255 255 / 0.58);
+  background: radial-gradient(ellipse at 50% 48%, #eef7dd 0 42%, #bfd59f 100%);
+  border: 3px solid rgb(255 255 255 / 0.9);
+  box-shadow:
+    0 0 0 4px rgb(105 72 45 / 0.3),
+    inset 0 0 0 1px rgb(21 24 22 / 0.08);
 }
 
 .oval-track__infield {
@@ -503,12 +523,18 @@ input[type="range"] {
 }
 
 .oval-horse {
+  --horse-badge: var(--green);
+  --horse-fill: var(--green);
+  --horse-glow: rgb(48 139 96 / 0.3);
+  --horse-stroke: #13583c;
+  --saddle-fill: #fbf4df;
+
   position: absolute;
   z-index: 4;
   display: grid;
   place-items: center;
-  width: 58px;
-  height: 48px;
+  width: 66px;
+  height: 52px;
   color: #fff;
   transform: translate(-50%, -50%);
   transition:
@@ -518,14 +544,45 @@ input[type="range"] {
 
 .oval-horse svg {
   position: absolute;
-  width: 56px;
-  height: 34px;
-  fill: var(--blue);
-  stroke: #173043;
+  width: 66px;
+  height: 40px;
+  overflow: visible;
+  filter:
+    drop-shadow(0 5px 6px rgb(21 24 22 / 0.22))
+    drop-shadow(0 0 8px var(--horse-glow));
+  transform: rotate(var(--horse-rotation, 0deg));
+  transform-origin: 50% 50%;
+}
+
+.horse-body,
+.horse-neck,
+.horse-tail {
+  fill: var(--horse-fill);
+  stroke: var(--horse-stroke);
+  stroke-linejoin: round;
   stroke-width: 2;
+}
+
+.horse-mane,
+.horse-leg,
+.horse-hoof {
+  fill: none;
+  stroke: var(--horse-stroke);
   stroke-linecap: round;
   stroke-linejoin: round;
-  filter: drop-shadow(0 5px 6px rgb(21 24 22 / 0.22));
+  stroke-width: 3;
+}
+
+.horse-saddle {
+  fill: var(--saddle-fill);
+  stroke: var(--horse-stroke);
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.horse-eye {
+  fill: var(--ink);
+  stroke: none;
 }
 
 .oval-horse span {
@@ -535,16 +592,17 @@ input[type="range"] {
   width: 20px;
   height: 20px;
   margin-top: -2px;
-  background: var(--ink);
+  background: var(--horse-badge);
   border: 2px solid #fff;
   border-radius: 50%;
   font-size: 0.7rem;
   font-weight: 900;
+  box-shadow: 0 4px 8px rgb(21 24 22 / 0.2);
 }
 
 .oval-horse strong {
   position: absolute;
-  top: 34px;
+  top: 39px;
   min-width: 46px;
   padding: 2px 6px;
   color: var(--ink);
@@ -556,14 +614,42 @@ input[type="range"] {
   line-height: 1.1;
 }
 
-.oval-horse--top svg {
-  fill: var(--gold);
-  stroke: #6b4b13;
+.oval-horse--leader {
+  --horse-badge: #8a5f0d;
+  --horse-fill: var(--gold);
+  --horse-glow: rgb(212 154 40 / 0.55);
+  --horse-stroke: #6b4b13;
+  --saddle-fill: #fff7d6;
 }
 
-.oval-horse--last svg {
-  fill: var(--red);
-  stroke: #5e1f17;
+.oval-horse--second {
+  --horse-badge: #5d6770;
+  --horse-fill: #c9cfd5;
+  --horse-glow: rgb(116 130 140 / 0.45);
+  --horse-stroke: #59636c;
+  --saddle-fill: #f8fafb;
+}
+
+.oval-horse--third {
+  --horse-badge: #7b461e;
+  --horse-fill: #b9783e;
+  --horse-glow: rgb(185 116 54 / 0.45);
+  --horse-stroke: #6f3f1b;
+  --saddle-fill: #fff0dd;
+}
+
+.oval-horse--positive {
+  --horse-badge: var(--green);
+  --horse-fill: var(--green);
+  --horse-glow: rgb(48 139 96 / 0.32);
+  --horse-stroke: #13583c;
+}
+
+.oval-horse--negative {
+  --horse-badge: var(--red);
+  --horse-fill: var(--red);
+  --horse-glow: rgb(183 75 55 / 0.32);
+  --horse-stroke: #642519;
 }
 
 .race-roster {
