@@ -57,7 +57,18 @@ for (const warning of warnings) {
 }
 
 const entrySummaries = entries.map((entry) => {
-  const baseline = findPriceOnOrBefore(histories[entry.id], BUY_DATE);
+  const sourceBaseline = findPriceOnOrBefore(histories[entry.id], BUY_DATE);
+  const action = overrides.corporateActions?.[entry.id];
+  // Check the original purchase against prices expressed in original shares.
+  // Position valuation separately rejects an unexpected split-price basis.
+  const priceScale = action?.sharesAfter != null
+    ? Number(sourceBaseline?.close) / Number(action.baselineCloseBeforeSplit) : 1;
+  const baseline = sourceBaseline ? {
+    ...sourceBaseline,
+    low: sourceBaseline.low / priceScale,
+    high: sourceBaseline.high / priceScale,
+    close: sourceBaseline.close / priceScale,
+  } : null;
   const hasDailyRange = baseline?.low !== baseline?.high;
   const baselineFits =
     hasDailyRange &&
