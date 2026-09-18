@@ -3,6 +3,7 @@ export const BUY_DATE = '2026-02-06';
 export const SELL_DATE = '2026-12-21';
 
 export const SYMBOL_MAPPINGS = {
+  SATS: 'ECHO',
   SOL: 'SOL-USD',
   HYPE: 'HYPE32196-USD',
 };
@@ -110,7 +111,14 @@ export function generateFridayDates(startDate, latestDate) {
 }
 
 export function latestCompletedFriday(today = new Date()) {
-  const cursor = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', hourCycle: 'h23',
+  }).formatToParts(today).map(({ type, value }) => [type, value]));
+  const cursor = toUtcDate(`${parts.year}-${parts.month}-${parts.day}`);
+  if (cursor.getUTCDay() === 5 && Number(parts.hour) < 16) {
+    cursor.setUTCDate(cursor.getUTCDate() - 7);
+  }
   while (cursor.getUTCDay() !== 5) {
     cursor.setUTCDate(cursor.getUTCDate() - 1);
   }
@@ -144,15 +152,40 @@ export function isPriceInsideRange(price, targetPrice) {
 export function calculatePositionValue(entry, baselinePrice, currentPrice, options = {}) {
   const override = options.finalSaleOverride;
   const corporateAction = options.corporateAction;
+  const valuationDate = options.valuationDate ?? currentPrice?.date;
 
   if (override?.saleValue != null) {
     return Number(override.saleValue);
   }
 
   if (override?.salePrice != null) {
-    const shareMultiplier =
-      Number(override.shareMultiplier ?? corporateAction?.shareMultiplier ?? 1) || 1;
-    return entry.shares * shareMultiplier * Number(override.salePrice);
+    const shares = override.shareMultiplier != null
+      ? entry.shares * Number(override.shareMultiplier)
+      : sharesOnDate(entry, corporateAction, valuationDate);
+    return shares * Number(override.salePrice);
+  }
+
+  if (corporateAction?.sharesAfter != null) {
+    // Yahoo can back-adjust historical closes after a split. Anchor the known
+    // buy-date close so a refresh preserves old snapshots and applies the new
+    // share count exactly once. Close, not adjustedClose, excludes dividends.
+    const originalClose = Number(corporateAction.baselineCloseBeforeSplit);
+    const splitFactor = Number(corporateAction.reverseSplitFactor);
+    const baselineClose = Number(baselinePrice?.close);
+    const close = Number(currentPrice?.close);
+    const near = (actual, expected) => Math.abs(actual - expected) <= expected * 0.0001;
+    if (!currentPrice?.date || !Number.isFinite(close) || close < 0 ||
+        !(originalClose > 0) || !(splitFactor > 1)) {
+      throw new Error(`Cannot calculate split value for ${entry.ticker}: missing price basis.`);
+    }
+    const rawHistory = near(baselineClose, originalClose);
+    const adjustedHistory = near(baselineClose, originalClose * splitFactor);
+    if (!rawHistory && !adjustedHistory) {
+      throw new Error(`Cannot calculate split value for ${entry.ticker}: unrecognized historical price basis.`);
+    }
+    const beforeSplit = !corporateActionApplies(corporateAction, currentPrice.date);
+    const tradedClose = adjustedHistory && beforeSplit ? close / splitFactor : close;
+    return sharesOnDate(entry, corporateAction, currentPrice.date) * tradedClose;
   }
 
   const shareMultiplier = corporateActionApplies(corporateAction, currentPrice?.date)
@@ -178,24 +211,32 @@ export function calculatePositionValue(entry, baselinePrice, currentPrice, optio
 }
 
 export function corporateActionApplies(corporateAction, currentDate) {
-  if (!corporateAction?.shareMultiplier) {
+  if (!corporateAction?.shareMultiplier && corporateAction?.sharesAfter == null && !corporateAction?.tickerAfter) {
     return false;
   }
-  if (!corporateAction.effectiveDate || !currentDate) {
+  if (!corporateAction.effectiveDate) {
     return true;
   }
-  return currentDate >= corporateAction.effectiveDate;
+  return Boolean(currentDate && currentDate >= corporateAction.effectiveDate);
 }
 
-export function createStanding(entry, value, sourceDate, snapshotDate) {
+export function sharesOnDate(entry, corporateAction, date) {
+  if (!corporateActionApplies(corporateAction, date)) return entry.shares;
+  return corporateAction.sharesAfter != null
+    ? Number(corporateAction.sharesAfter)
+    : entry.shares * Number(corporateAction.shareMultiplier ?? 1);
+}
+
+export function createStanding(entry, value, sourceDate, snapshotDate, corporateAction = null) {
   const topUpOwed = Math.max(0, STARTING_VALUE - value);
   return {
     id: entry.id,
     draftOrder: entry.draftOrder,
     name: entry.name,
-    ticker: entry.ticker,
+    ticker: corporateActionApplies(corporateAction, sourceDate) && corporateAction.tickerAfter
+      ? corporateAction.tickerAfter : entry.ticker,
     sourceSymbol: entry.sourceSymbol,
-    shares: entry.shares,
+    shares: sharesOnDate(entry, corporateAction, sourceDate),
     impliedBuyPrice: entry.impliedBuyPrice,
     value,
     returnPct: ((value - STARTING_VALUE) / STARTING_VALUE) * 100,

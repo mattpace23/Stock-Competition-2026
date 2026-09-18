@@ -127,9 +127,10 @@ function buildSnapshot(snapshotDate, isFinal, entriesForSnapshot, historiesById,
     const value = calculatePositionValue(entry, baseline, current ?? baseline, {
       finalSaleOverride: override,
       corporateAction,
+      valuationDate: isFinal ? snapshotDate : current?.date,
     });
 
-    return createStanding(entry, roundCurrency(value), current?.date ?? snapshotDate, snapshotDate);
+    return createStanding(entry, roundCurrency(value), override ? snapshotDate : current?.date ?? snapshotDate, snapshotDate, corporateAction);
   });
 
   const ranked = rankStandings(standings);

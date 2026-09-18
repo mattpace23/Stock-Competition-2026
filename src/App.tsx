@@ -25,6 +25,7 @@ import {
 } from 'recharts';
 import competitionData from './data/competition.json';
 import moverNotesData from './data/mover-notes.json';
+import manualOverrides from '../data/manual-overrides.json';
 
 type Entry = {
   id: string;
@@ -206,7 +207,7 @@ function App() {
         for (const id of chartIds) {
           const standing = snapshot.standings.find((candidate) => candidate.id === id);
           if (standing) {
-            row[standing.ticker] = standing.returnPct;
+            row[id] = standing.returnPct;
           }
         }
         return row;
@@ -214,11 +215,10 @@ function App() {
     [chartIds, snapshots],
   );
 
-  const chartTickers = useMemo(
+  const chartSeries = useMemo(
     () =>
       chartIds
-        .map((id) => raceRows.find((standing) => standing.id === id)?.ticker)
-        .filter((ticker): ticker is string => Boolean(ticker)),
+        .map((id) => ({ id, ticker: raceRows.find((standing) => standing.id === id)?.ticker ?? id })),
     [chartIds, raceRows],
   );
 
@@ -537,11 +537,12 @@ function App() {
                   width={44}
                 />
                 <Tooltip formatter={(value) => [`${Number(value).toFixed(2)}%`, 'Return']} />
-                {chartTickers.map((ticker, index) => (
+                {chartSeries.map(({ id, ticker }, index) => (
                   <Line
-                    dataKey={ticker}
+                    dataKey={id}
+                    name={ticker}
                     dot={false}
-                    key={ticker}
+                    key={id}
                     stroke={lineColors[index % lineColors.length]}
                     strokeWidth={index < 5 ? 3 : 2}
                     type="monotone"
@@ -551,8 +552,8 @@ function App() {
             </ResponsiveContainer>
           </div>
           <div className="chart-legend">
-            {chartTickers.map((ticker, index) => (
-              <span key={ticker}>
+            {chartSeries.map(({ id, ticker }, index) => (
+              <span key={id}>
                 <i style={{ background: lineColors[index % lineColors.length] }} />
                 {ticker}
               </span>
@@ -571,6 +572,14 @@ function App() {
             <div>
               <dt>Manual Sales</dt>
               <dd>{data.hasFinalSalePrices ? 'Loaded' : 'Waiting for Dec. 21 sale prices'}</dd>
+            </div>
+            <div>
+              <dt>OPTT reverse split</dt>
+              <dd>
+                Jake GPT: 218 shares through Sept. 11; {manualOverrides.corporateActions['5'].sharesAfter} shares
+                {' '}from Sept. 14. Historical standings use the share count for that date.
+                {' '}<a href={manualOverrides.corporateActions['5'].sourceUrl} target="_blank" rel="noreferrer">Split details</a>
+              </dd>
             </div>
             <div>
               <dt>Crypto Mappings</dt>

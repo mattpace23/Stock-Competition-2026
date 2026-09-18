@@ -2,12 +2,17 @@ name: Refresh weekly standings
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/refresh-weekly-standings.yml'
+      - 'scripts/**'
+      - 'data/manual-overrides.json'
+      - 'Stock Data.csv'
   schedule:
-    # Friday 3:45 PM Central during daylight saving time.
-    # This is 45 minutes after the regular U.S. market close.
-    - cron: "45 20 * 3-10 5"
-    # Friday 3:45 PM Central during standard time.
-    - cron: "45 21 * 1,2,11,12 5"
+    # Keep the existing 3:45 PM Central refresh, with exact DST transitions.
+    - cron: "45 15 * * 5"
+      timezone: America/Chicago
 
 permissions:
   contents: write

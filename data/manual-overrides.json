@@ -1,6 +1,27 @@
 {
   "finalSaleDate": "2026-12-21",
   "finalSalePrices": {},
-  "corporateActions": {},
+  "corporateActions": {
+    "3": {
+      "effectiveDate": "2026-08-24",
+      "sharesAfter": 1.959,
+      "reverseSplitFactor": 10,
+      "baselineCloseBeforeSplit": 5.52,
+      "note": "MSTU 1-for-10 reverse split. The post-split holding of 1.959 shares was confirmed by Matt."
+    },
+    "5": {
+      "effectiveDate": "2026-09-14",
+      "sharesAfter": 8,
+      "reverseSplitFactor": 30,
+      "baselineCloseBeforeSplit": 0.46,
+      "note": "Jake GPT: 218 OPTT shares become 8 shares after the 1-for-30 reverse split and whole-share round-up. September 11 closes use 218 shares; September 14 onward uses 8.",
+      "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1378140/000149315226042282/form8-k.htm"
+    },
+    "21": {
+      "effectiveDate": "2026-06-24",
+      "tickerAfter": "ECHO",
+      "note": "Filko's SATS position continues as ECHO with the same 0.8925 shares."
+    }
+  },
   "notes": "Add final sale prices after Dec. 21. Use draft order as the key, e.g. \"14\": { \"salePrice\": 250.12 } or \"14\": { \"saleValue\": 155.10 }."
 }
