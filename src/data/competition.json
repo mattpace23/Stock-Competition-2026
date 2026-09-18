@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T12:26:48.979Z",
+  "generatedAt": "2026-09-18T12:29:25.349Z",
   "buyDate": "2026-02-06",
   "sellDate": "2026-12-21",
   "latestSnapshotDate": "2026-09-11",
@@ -53,11 +53,11 @@
       "shares": 19.4059,
       "impliedBuyPrice": 5.153072003875111,
       "baselineSourceDate": "2026-02-06",
-      "baselineFits": null,
+      "baselineFits": true,
       "baselineRange": {
-        "low": 41.55,
-        "high": 55.7,
-        "close": 55.2
+        "low": 4.15,
+        "high": 5.57,
+        "close": 5.52
       }
     },
     {
@@ -22447,11 +22447,5 @@
       ]
     }
   ],
-  "warnings": [
-    {
-      "level": "warning",
-      "ticker": "MSTU",
-      "message": "MSTU implied buy price was not inside the Feb. 6 daily range."
-    }
-  ]
+  "warnings": []
 }
